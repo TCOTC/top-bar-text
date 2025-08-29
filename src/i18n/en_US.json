@@ -1,0 +1,6 @@
+{
+  "onload": "Plugin enabled",
+  "onunload": "Plugin disabled",
+  "uninstall": "Plugin uninstalled",
+  "onloadFailed": "Plugin loading failed"
+}

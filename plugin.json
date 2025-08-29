@@ -1,0 +1,42 @@
+{
+  "name": "top-bar-text",
+  "author": "TCOTC",
+  "url": "https://github.com/TCOTC/top-bar-text",
+  "version": "0.1.0",
+  "minAppVersion": "3.3.0",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "default": "Top Bar Text",
+    "zh_CN": "顶栏文本",
+    "zh_CHT": "頂欄文本"
+  },
+  "description": {
+    "default": "Display text and countdown in the top bar",
+    "zh_CN": "在顶栏显示文本、倒计时",
+    "zh_CHT": "在頂欄顯示文本、倒計時"
+  },
+  "readme": {
+    "default": "README.md",
+    "zh_CN": "README_zh_CN.md",
+    "zh_CHT": "README_zh_CHT.md"
+  },
+  "funding": {
+    "openCollective": "",
+    "patreon": "",
+    "github": "",
+    "custom": [
+      "https://bento.me/jeffff"
+    ]
+  },
+  "keywords": [
+    "topbar",
+    "顶部栏",
+    "custom",
+    "自定义"
+  ]
+}

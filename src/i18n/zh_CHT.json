@@ -1,0 +1,6 @@
+{
+  "onload": "插件已啟用",
+  "onunload": "插件已禁用",
+  "uninstall": "插件已卸載",
+  "onloadFailed": "插件載入失敗"
+}
