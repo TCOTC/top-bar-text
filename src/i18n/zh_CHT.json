@@ -2,5 +2,20 @@
   "onload": "插件已啟用",
   "onunload": "插件已禁用",
   "uninstall": "插件已卸載",
-  "onloadFailed": "插件載入失敗"
+  "onloadFailed": "插件載入失敗",
+  "placeholderCountdownTemplate": "${text} 替換為倒計時文字，${year} 替換為剩餘年數，${month} 替換為剩餘月數，${day} 替換為剩餘天數，${hour} 替換為剩餘小時數，${minute} 替換為剩餘分鐘數，${second} 替換為剩餘秒數",
+  "placeholderCountdownText": "用於替換模板中的 ${text} 部分",
+  "placeholderCountdownTargetTime": "格式為 YYYY-MM-DD HH:MM:SS",
+  "topbarRightCountdownTemplate": "桌面端頂欄右側倒計時模板",
+  "topbarRightCountdownText": "桌面端頂欄右側倒計時文字",
+  "topbarRightCountdownTargetTime": "桌面端頂欄右側倒計時時間",
+  "topbarRightCountdownTemplateDefault": "示例：距離 <span style=\"color: red;\">${text}</span> 剩餘 ${year} 年 ${day} 天",
+  "topbarRightCountdownTextDefault": "2100年",
+  "topbarRightCountdownTargetTimeDefault": "2100-01-01 12:00:00",
+  "topbarLeftCountdownTemplate": "桌面端頂欄左側倒計時模板",
+  "topbarLeftCountdownText": "桌面端頂欄左側倒計時文字",
+  "topbarLeftCountdownTargetTime": "桌面端頂欄左側倒計時時間",
+  "mobileRightCountdownTemplate": "移動端右側欄倒計時模板",
+  "mobileRightCountdownText": "移動端右側欄倒計時文字",
+  "mobileRightCountdownTargetTime": "移動端右側欄倒計時時間"
 }
