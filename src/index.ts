@@ -13,6 +13,8 @@ export default class TopBarTextPlugin extends Plugin {
     private isMobile: boolean;
     private topbarDragElement: HTMLElement;
     private accountMenuElement: HTMLElement;
+    private updateTimers: Map<string, number> = new Map(); // 存储各元素的更新定时器
+    private hourlyUpdateTimer: number = 0; // 整点更新定时器
     
     async onload() {
         const frontEnd = getFrontend();
@@ -110,6 +112,14 @@ export default class TopBarTextPlugin extends Plugin {
             ELEMENT_TYPE.forEach(type => {
                 this.insertElement(type);
             });
+            
+            // 重新启动所有定时器（因为配置可能改变了更新间隔）
+            ELEMENT_TYPE.forEach(type => {
+                this.startUpdateTimer(type);
+            });
+            
+            // 重新启动整点更新定时器
+            this.startHourlyUpdateTimer();
         };
     }
 
@@ -129,6 +139,14 @@ export default class TopBarTextPlugin extends Plugin {
             this.insertElement(type, true);
         });
 
+        // 启动所有定时器
+        ELEMENT_TYPE.forEach(type => {
+            this.startUpdateTimer(type);
+        });
+
+        // 启动整点更新定时器
+        this.startHourlyUpdateTimer();
+
         console.log(this.displayName, this.i18n.onload);
     }
 
@@ -140,6 +158,12 @@ export default class TopBarTextPlugin extends Plugin {
                 countdownElement.remove();
             }
         });
+
+        // 停止所有定时器
+        this.stopAllUpdateTimers();
+
+        // 停止整点更新定时器
+        this.stopHourlyUpdateTimer();
 
         console.log(this.displayName, this.i18n.onunload);
     }
@@ -153,10 +177,113 @@ export default class TopBarTextPlugin extends Plugin {
             }
         });
 
+        // 停止所有定时器
+        this.stopAllUpdateTimers();
+
+        // 停止整点更新定时器
+        this.stopHourlyUpdateTimer();
+
         // 删除配置
         await this.removeData(STORAGE_NAME);
 
         console.log(this.displayName, this.i18n.uninstall);
+    }
+
+    /**
+     * 根据模板中的时间占位符计算更新间隔
+     * @param template 倒计时模板
+     * @returns 更新间隔（毫秒）
+     */
+    private getUpdateInterval = (template: string): number => {
+        // 按优先级检查时间占位符，返回最低级别的更新间隔
+        if (template.includes("${second}")) {
+            return 1000; // 1 秒
+        } else if (template.includes("${minute}")) {
+            return 60 * 1000; // 1 分钟
+        } else if (template.includes("${hour}") || template.includes("${day}") || template.includes("${month}") || template.includes("${year}")) {
+            return 60 * 60 * 1000; // 1 小时
+        }
+        return 0; // 无时间占位符，不需要定时更新
+    }
+
+    /**
+     * 启动指定元素的定时更新
+     * @param type 元素类型
+     */
+    private startUpdateTimer = (type: (typeof ELEMENT_TYPE)[number]) => {
+        // 先停止现有的定时器
+        this.stopUpdateTimer(type);
+        
+        const template = this.data[STORAGE_NAME][`${type}Countdown`]?.template;
+        if (!template) return;
+        
+        const interval = this.getUpdateInterval(template);
+        if (interval <= 0) return; // 不需要定时更新
+        
+        // 启动新的定时器
+        const timerId = window.setInterval(() => {
+            this.updateCountdownElement(type);
+        }, interval);
+        
+        this.updateTimers.set(type, timerId);
+    }
+
+    /**
+     * 停止指定元素的定时更新
+     * @param type 元素类型
+     */
+    private stopUpdateTimer = (type: (typeof ELEMENT_TYPE)[number]) => {
+        const timerId = this.updateTimers.get(type);
+        if (timerId) {
+            window.clearInterval(timerId);
+            this.updateTimers.delete(type);
+        }
+    }
+
+    /**
+     * 停止所有定时器
+     */
+    private stopAllUpdateTimers = () => {
+        this.updateTimers.forEach((timerId, type) => {
+            window.clearInterval(timerId);
+        });
+        this.updateTimers.clear();
+    }
+
+    /**
+     * 启动整点更新定时器
+     */
+    private startHourlyUpdateTimer = () => {
+        // 先停止现有的整点更新定时器
+        this.stopHourlyUpdateTimer();
+        
+        // 计算距离下一个整点后30秒的毫秒数
+        const now = new Date();
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1, 0, 30, 0); // 整点后30秒
+        const delayToNextUpdate = nextHour.getTime() - now.getTime();
+        
+        // 设置定时器，在下一个整点后30秒触发
+        this.hourlyUpdateTimer = window.setInterval(() => {
+            // 在整点后30秒更新所有元素
+            ELEMENT_TYPE.forEach(type => {
+                this.updateCountdownElement(type);
+            });
+            
+            // 停止当前定时器，重新计算下一个整点后30秒
+            this.stopHourlyUpdateTimer();
+            this.startHourlyUpdateTimer();
+        }, delayToNextUpdate);
+    }
+
+    /**
+     * 停止整点更新定时器
+     */
+    private stopHourlyUpdateTimer = () => {
+        if (this.hourlyUpdateTimer) {
+            window.clearInterval(this.hourlyUpdateTimer);
+            this.hourlyUpdateTimer = 0;
+        }
     }
 
     private calculateDaysLeft = (template: string, type: string) => {
@@ -171,7 +298,6 @@ export default class TopBarTextPlugin extends Plugin {
         const hasHour   = template.includes("${hour}");
         const hasMinute = template.includes("${minute}");
         const hasSecond = template.includes("${second}");
-        // TODO: 这里需要根据最低的级别来决定元素的更新时间间隔，比如每秒更新一次元素
 
         // 替换模板中的占位符
         let countdownHTML = template;
