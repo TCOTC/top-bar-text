@@ -108,9 +108,22 @@ export default class TopBarTextPlugin extends Plugin {
                 topbarLeftCountdown,
                 mobileRightCountdown,
             });
-            // 修改配置后重新插入元素
+            
+            // 检查每个倒计时模板
             ELEMENT_TYPE.forEach(type => {
-                this.insertElement(type);
+                const template = this.data[STORAGE_NAME][`${type}Countdown`]?.template;
+                if (!template || template.trim() === "") {
+                    // 模板为空字符串，移除倒计时元素
+                    const countdownElement = document.getElementById(`top-bar-text-${type}`);
+                    if (countdownElement) {
+                        countdownElement.remove();
+                    }
+                    // 停止该元素的定时器
+                    this.stopUpdateTimer(type);
+                } else {
+                    // 模板不为空，重新插入元素
+                    this.insertElement(type);
+                }
             });
             
             // 重新启动所有定时器（因为配置可能改变了更新间隔）
