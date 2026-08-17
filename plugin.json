@@ -1,9 +1,9 @@
 {
   "name": "top-bar-text",
-  "author": "TCOTC",
+  "author": "Jeffrey Chen",
   "url": "https://github.com/TCOTC/top-bar-text",
-  "version": "0.1.1",
-  "minAppVersion": "3.1.10",
+  "version": "1.0.0",
+  "minAppVersion": "3.8.0",
   "backends": [
     "all"
   ],
@@ -12,33 +12,19 @@
   ],
   "displayName": {
     "default": "Top Bar Text",
-    "zh_CN": "顶栏文本",
-    "zh_CHT": "頂欄文本"
+    "zh-CN": "顶栏文本",
+    "zh-TW": "頂欄文本"
   },
   "description": {
     "default": "Display text and countdown in the top bar",
-    "zh_CN": "在顶栏显示文本、倒计时",
-    "zh_CHT": "在頂欄顯示文本、倒計時"
+    "zh-CN": "在顶栏显示文本、倒计时",
+    "zh-TW": "在頂欄顯示文本、倒計時"
   },
   "readme": {
     "default": "README.md",
-    "zh_CN": "README_zh_CN.md",
-    "zh_CHT": "README_zh_CHT.md"
+    "zh-CN": "README.zh-CN.md",
+    "zh-TW": "README.zh-TW.md"
   },
-  "funding": {
-    "openCollective": "",
-    "patreon": "",
-    "github": "",
-    "custom": [
-      "https://bento.me/jeffff"
-    ]
-  },
-  "keywords": [
-    "topbar",
-    "顶部栏",
-    "custom",
-    "自定义",
-    "time",
-    "时间"
-  ]
+  "funding": {"custom": ["https://mytemos.com/"]},
+  "keywords": ["topbar","顶部栏","custom","自定义","time","时间"]
 }

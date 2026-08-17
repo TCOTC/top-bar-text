@@ -10,9 +10,9 @@ const ELEMENT_TYPE = ["topbarRight", "topbarLeft", "mobileRight"];
 
 // 原始代码片段：https://ld246.com/article/1728048965009
 export default class TopBarTextPlugin extends Plugin {
-    private isMobile: boolean;
-    private topbarDragElement: HTMLElement;
-    private accountMenuElement: HTMLElement;
+    private isMobile = false;
+    private topbarDragElement: HTMLElement | undefined;
+    private mobileMenuAnchorElement: HTMLElement | undefined;
     private updateTimers: Map<string, number> = new Map(); // 存储各元素的更新定时器
     private hourlyUpdateTimer: number = 0; // 整点更新定时器
     
@@ -21,8 +21,10 @@ export default class TopBarTextPlugin extends Plugin {
         this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
         // 加载配置
         await this.loadData(STORAGE_NAME);
-        // 初始化配置
-        this.data[STORAGE_NAME] ||= {}; // 默认是空字符串，所以用 ||? 而不是 ??=
+        // loadData 在配置文件不存在时返回空字符串，需归一化为对象
+        if (typeof this.data[STORAGE_NAME] !== "object" || this.data[STORAGE_NAME] === null) {
+            this.data[STORAGE_NAME] = {};
+        }
         ELEMENT_TYPE.forEach(type => {
             this.data[STORAGE_NAME][`${type}Countdown`] ??= {};
         });
@@ -138,13 +140,19 @@ export default class TopBarTextPlugin extends Plugin {
 
     onLayoutReady() {
         if (!this.isMobile) {
-            this.topbarDragElement = document.querySelector(".toolbar > #drag") as HTMLElement;
+            // 使用 #toolbar 限定顶栏，避免匹配到其他 .toolbar 容器
+            this.topbarDragElement = document.querySelector("#toolbar > #drag") as HTMLElement;
+            if (!this.topbarDragElement) {
+                // 独立窗口没有顶栏
+                return;
+            }
         } else {
-            this.accountMenuElement = document.querySelector("#menuAccount.b3-menu__item") as HTMLElement;
-        }
-        if (!this.topbarDragElement && !this.accountMenuElement) {
-            console.error(this.displayName, this.i18n.onloadFailed);
-            return;
+            // 移动端右侧栏第一个分组前方
+            this.mobileMenuAnchorElement = document.querySelector("#menu .b3-menu__items > .b3-menu__group") as HTMLElement;
+            if (!this.mobileMenuAnchorElement) {
+                console.error(this.displayName, this.i18n.onloadFailed);
+                return;
+            }
         }
 
         // 插入元素
@@ -413,45 +421,53 @@ export default class TopBarTextPlugin extends Plugin {
 
         if (this.isMobile) {
             if (type === "mobileRight") {
-                // 移动端右侧栏的账号选项上方
+                // 移动端右侧栏第一个 b3-menu__group 前面
+                if (!this.mobileMenuAnchorElement) return;
                 genCountdownHTML();
                 if (!countdownHTML) return;
     
                 if (countdownElement) {
-                    countdownElement.innerHTML = countdownHTML;
+                    const labelElement = countdownElement.querySelector(".b3-menu__label");
+                    if (labelElement) {
+                        labelElement.innerHTML = countdownHTML;
+                    }
                 } else {
                     const element = document.createElement("div");
-                    element.id = `top-bar-text-mobileRight`;
-                    element.className = "b3-menu__item";
-                    element.innerHTML = countdownHTML;
-                    this.accountMenuElement.insertAdjacentElement("beforebegin", element);
+                    element.id = "top-bar-text-mobileRight";
+                    element.className = "b3-menu__group";
+                    element.innerHTML = `<div class="b3-menu__group-items">
+    <div class="b3-menu__item b3-menu__item--readonly">
+        <span class="b3-menu__label">${countdownHTML}</span>
+    </div>
+</div>`;
+                    this.mobileMenuAnchorElement.insertAdjacentElement("beforebegin", element);
                 }
             }
         } else if (type === "topbarRight" || type === "topbarLeft") {
             // 桌面端顶栏右侧或左侧
+            const topbarDragElement = this.topbarDragElement;
+            if (!topbarDragElement) return;
             genCountdownHTML();
             if (!countdownHTML) return;
 
             if (countdownElement) {
                 countdownElement.innerHTML = countdownHTML;
+                countdownElement.setAttribute("aria-label", countdownElement.textContent || "");
             } else {
                 const element = document.createElement("div");
                 element.id = `top-bar-text-${type}`;
-                element.style.fontSize = getComputedStyle(this.topbarDragElement).fontSize;
+                element.style.fontSize = getComputedStyle(topbarDragElement).fontSize;
                 if (isFirstInsert) {
                     setTimeout(() => {
-                        element.style.fontSize = getComputedStyle(this.topbarDragElement).fontSize; // 可能有的主题会修改 topbarDragElement 元素的字号，所以这里重新获取一次
+                        element.style.fontSize = getComputedStyle(topbarDragElement).fontSize; // 可能有的主题会修改 topbarDragElement 元素的字号，所以这里重新获取一次
                     }, 700);
                 }
-                element.style.color = "var(--b3-toolbar-color)";
-                element.style.padding = "0 4px";
-                // @ts-ignore webkitAppRegion 不是标准属性，忽略 TS 检查
-                element.style.webkitAppRegion = "drag";
                 element.innerHTML = countdownHTML;
+                element.setAttribute("aria-label", element.textContent || "");
                 if (type === "topbarRight") {
-                    this.topbarDragElement.insertAdjacentElement("afterend", element);
+                    topbarDragElement.insertAdjacentElement("afterend", element);
                 } else {
-                    this.topbarDragElement.insertAdjacentElement("beforebegin", element);
+                    topbarDragElement.insertAdjacentElement("beforebegin", element);
                 }
             }
         }
