@@ -9,6 +9,16 @@
   -webkit-app-region: drag;
 }
 
+// 编辑器全屏时 JS 给 #toolbar 加上 data-top-bar-text-drag-hidden。
+// visibility: hidden 仍占位，必须取消拖拽区，否则会挡住全屏后顶栏上的按钮。
+#toolbar[data-top-bar-text-drag-hidden] {
+  #top-bar-text-topbarLeft,
+  #top-bar-text-topbarRight {
+    visibility: hidden;
+    -webkit-app-region: no-drag;
+  }
+}
+
 #top-bar-text-mobileRight {
   pointer-events: none;
 

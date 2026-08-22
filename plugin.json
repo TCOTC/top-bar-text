@@ -2,14 +2,10 @@
   "name": "top-bar-text",
   "author": "Jeffrey Chen",
   "url": "https://github.com/TCOTC/top-bar-text",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "3.8.0",
-  "backends": [
-    "all"
-  ],
-  "frontends": [
-    "all"
-  ],
+  "backends": ["all"],
+  "frontends": ["all"],
   "displayName": {
     "default": "Top Bar Text",
     "zh-CN": "顶栏文本",

@@ -7,12 +7,16 @@ import "./index.scss";
 
 const STORAGE_NAME = "top-bar-text-config.json";
 const ELEMENT_TYPE = ["topbarRight", "topbarLeft", "mobileRight"];
+const DRAG_HIDDEN_ATTR = "data-top-bar-text-drag-hidden";
 
 // 原始代码片段：https://ld246.com/article/1728048965009
 export default class TopBarTextPlugin extends Plugin {
     private isMobile = false;
     private topbarDragElement: HTMLElement | undefined;
+    private toolbarElement: HTMLElement | undefined;
     private mobileMenuAnchorElement: HTMLElement | undefined;
+    private dragHiddenObserver: MutationObserver | undefined;
+    private lastDragHidden: boolean | undefined;
     private updateTimers: Map<string, number> = new Map(); // 存储各元素的更新定时器
     private hourlyUpdateTimer: number = 0; // 整点更新定时器
     
@@ -155,6 +159,10 @@ export default class TopBarTextPlugin extends Plugin {
             }
         }
 
+        if (!this.isMobile) {
+            this.startDragHiddenObserver();
+        }
+
         // 插入元素
         ELEMENT_TYPE.forEach(type => {
             this.insertElement(type, true);
@@ -172,6 +180,8 @@ export default class TopBarTextPlugin extends Plugin {
     }
 
     onunload() {
+        this.stopDragHiddenObserver();
+
         // 移除元素
         ELEMENT_TYPE.forEach(type => {
             const countdownElement = document.getElementById(`top-bar-text-${type}`);
@@ -190,6 +200,8 @@ export default class TopBarTextPlugin extends Plugin {
     }
 
     async uninstall() {
+        this.stopDragHiddenObserver();
+
         // 移除元素
         ELEMENT_TYPE.forEach(type => {
             const countdownElement = document.getElementById(`top-bar-text-${type}`);
@@ -209,6 +221,39 @@ export default class TopBarTextPlugin extends Plugin {
 
         console.log(this.displayName, this.i18n.uninstall);
     }
+
+    /** 跟随 #drag.fn__hidden，把状态记在 #toolbar 上，避免拖拽区挡住全屏后的按钮 */
+    private syncTopbarDragHidden = () => {
+        const hidden = !!this.topbarDragElement?.classList.contains("fn__hidden");
+        if (hidden === this.lastDragHidden) {
+            return;
+        }
+        this.lastDragHidden = hidden;
+        this.toolbarElement?.toggleAttribute(DRAG_HIDDEN_ATTR, hidden);
+    };
+
+    private startDragHiddenObserver = () => {
+        this.stopDragHiddenObserver();
+        if (!this.topbarDragElement) {
+            return;
+        }
+        this.toolbarElement = this.topbarDragElement.parentElement ?? undefined;
+        this.dragHiddenObserver = new MutationObserver(() => {
+            this.syncTopbarDragHidden();
+        });
+        this.dragHiddenObserver.observe(this.topbarDragElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
+        this.syncTopbarDragHidden();
+    };
+
+    private stopDragHiddenObserver = () => {
+        this.dragHiddenObserver?.disconnect();
+        this.dragHiddenObserver = undefined;
+        this.lastDragHidden = undefined;
+        this.toolbarElement?.removeAttribute(DRAG_HIDDEN_ATTR);
+    };
 
     /**
      * 根据模板中的时间占位符计算更新间隔
