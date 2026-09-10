@@ -16,6 +16,7 @@ export default class TopBarTextPlugin extends Plugin {
     private toolbarElement: HTMLElement | undefined;
     private mobileMenuAnchorElement: HTMLElement | undefined;
     private dragHiddenObserver: MutationObserver | undefined;
+    private topbarOrderObserver: MutationObserver | undefined;
     private lastDragHidden: boolean | undefined;
     private updateTimers: Map<string, number> = new Map(); // 存储各元素的更新定时器
     private hourlyUpdateTimer: number = 0; // 整点更新定时器
@@ -161,12 +162,18 @@ export default class TopBarTextPlugin extends Plugin {
 
         if (!this.isMobile) {
             this.startDragHiddenObserver();
+            this.startTopbarOrderObserver();
         }
 
         // 插入元素
         ELEMENT_TYPE.forEach(type => {
             this.insertElement(type, true);
         });
+
+        // 元素插入后立即对齐一次，避免首次重排前的短暂错位
+        if (!this.isMobile) {
+            this.syncTopbarPosition();
+        }
 
         // 启动所有定时器
         ELEMENT_TYPE.forEach(type => {
@@ -181,6 +188,7 @@ export default class TopBarTextPlugin extends Plugin {
 
     onunload() {
         this.stopDragHiddenObserver();
+        this.stopTopbarOrderObserver();
 
         // 移除元素
         ELEMENT_TYPE.forEach(type => {
@@ -201,6 +209,7 @@ export default class TopBarTextPlugin extends Plugin {
 
     async uninstall() {
         this.stopDragHiddenObserver();
+        this.stopTopbarOrderObserver();
 
         // 移除元素
         ELEMENT_TYPE.forEach(type => {
@@ -253,6 +262,49 @@ export default class TopBarTextPlugin extends Plugin {
         this.dragHiddenObserver = undefined;
         this.lastDragHidden = undefined;
         this.toolbarElement?.removeAttribute(DRAG_HIDDEN_ATTR);
+    };
+
+    /**
+     * 思源会按顶栏条目配置重排 #toolbar 内的子元素（把带 data-topbar-entry 的条目移动到 #barMore 之前），
+     * 插件元素不在其中，重排后会滞留在原地。这里在重排后把它重新贴回 #drag 的右侧或左侧
+     */
+    private syncTopbarPosition = () => {
+        const dragElement = this.topbarDragElement;
+        if (!dragElement) {
+            return;
+        }
+        (["topbarRight", "topbarLeft"] as const).forEach((type) => {
+            const countdownElement = document.getElementById(`top-bar-text-${type}`);
+            if (!countdownElement) {
+                return;
+            }
+            if (type === "topbarRight") {
+                if (dragElement.nextElementSibling !== countdownElement) {
+                    dragElement.insertAdjacentElement("afterend", countdownElement);
+                }
+            } else if (dragElement.previousElementSibling !== countdownElement) {
+                dragElement.insertAdjacentElement("beforebegin", countdownElement);
+            }
+        });
+    };
+
+    private startTopbarOrderObserver = () => {
+        this.stopTopbarOrderObserver();
+        const toolbarElement = this.topbarDragElement?.parentElement;
+        if (!toolbarElement) {
+            return;
+        }
+        this.toolbarElement = toolbarElement;
+        this.topbarOrderObserver = new MutationObserver(() => {
+            this.syncTopbarPosition();
+        });
+        // 只监听直接子元素的增删，忽略插件自身更新 innerHTML 引起的子树变化
+        this.topbarOrderObserver.observe(toolbarElement, {childList: true});
+    };
+
+    private stopTopbarOrderObserver = () => {
+        this.topbarOrderObserver?.disconnect();
+        this.topbarOrderObserver = undefined;
     };
 
     /**

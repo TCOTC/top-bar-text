@@ -2,8 +2,8 @@
   "name": "top-bar-text",
   "author": "Jeffrey Chen",
   "url": "https://github.com/TCOTC/top-bar-text",
-  "version": "1.0.1",
-  "minAppVersion": "3.8.0",
+  "version": "1.0.2",
+  "minAppVersion": "3.8.3-alpha.1",
   "backends": ["all"],
   "frontends": ["all"],
   "displayName": {
@@ -21,6 +21,5 @@
     "zh-CN": "README.zh-CN.md",
     "zh-TW": "README.zh-TW.md"
   },
-  "funding": {"custom": ["https://mytemos.com/"]},
-  "keywords": ["topbar","顶部栏","custom","自定义","time","时间"]
+  "funding": {"custom": ["https://mytemos.com/"]}
 }
