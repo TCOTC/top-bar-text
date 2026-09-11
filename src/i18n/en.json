@@ -15,7 +15,9 @@
   "topbarLeftCountdownTemplate": "Desktop top bar left countdown template",
   "topbarLeftCountdownText": "Desktop top bar left countdown text",
   "topbarLeftCountdownTargetTime": "Desktop top bar left countdown time",
-  "mobileRightCountdownTemplate": "Mobile right sidebar countdown template",
-  "mobileRightCountdownText": "Mobile right sidebar countdown text",
-  "mobileRightCountdownTargetTime": "Mobile right sidebar countdown time"
+  "topbarRightTitle": "Desktop top bar right text",
+  "topbarLeftTitle": "Desktop top bar left text",
+  "mobileRightCountdownTemplate": "Mobile main menu countdown template",
+  "mobileRightCountdownText": "Mobile main menu countdown text",
+  "mobileRightCountdownTargetTime": "Mobile main menu countdown time"
 }

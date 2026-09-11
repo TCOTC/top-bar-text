@@ -2,8 +2,8 @@
   "name": "top-bar-text",
   "author": "Jeffrey Chen",
   "url": "https://github.com/TCOTC/top-bar-text",
-  "version": "1.0.2",
-  "minAppVersion": "3.8.3-alpha.1",
+  "version": "1.1.0",
+  "minAppVersion": "3.8.4-alpha.6",
   "backends": ["all"],
   "frontends": ["all"],
   "displayName": {

@@ -15,7 +15,9 @@
   "topbarLeftCountdownTemplate": "桌面端頂欄左側倒計時模板",
   "topbarLeftCountdownText": "桌面端頂欄左側倒計時文字",
   "topbarLeftCountdownTargetTime": "桌面端頂欄左側倒計時時間",
-  "mobileRightCountdownTemplate": "移動端右側欄倒計時模板",
-  "mobileRightCountdownText": "移動端右側欄倒計時文字",
-  "mobileRightCountdownTargetTime": "移動端右側欄倒計時時間"
+  "topbarRightTitle": "桌面端頂欄右側文字",
+  "topbarLeftTitle": "桌面端頂欄左側文字",
+  "mobileRightCountdownTemplate": "移動端主選單倒計時模板",
+  "mobileRightCountdownText": "移動端主選單倒計時文字",
+  "mobileRightCountdownTargetTime": "移動端主選單倒計時時間"
 }

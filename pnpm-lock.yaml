@@ -39,8 +39,8 @@ importers:
         specifier: ^16.0.5
         version: 16.0.8(sass@1.102.0)(webpack@5.109.2)
       siyuan:
-        specifier: ^1.2.3
-        version: 1.2.4
+        specifier: github:siyuan-note/petal#ab89b46871cb33ca1ac9453d61c981de9fb76617
+        version: https://codeload.github.com/siyuan-note/petal/tar.gz/ab89b46871cb33ca1ac9453d61c981de9fb76617
       tslib:
         specifier: 2.4.0
         version: 2.4.0
@@ -761,6 +761,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -1293,8 +1294,9 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  siyuan@1.2.4:
-    resolution: {integrity: sha512-L1QZcFp2zZxX7Qsjvmj/pqim1vBw9iEDeilEht51zxLf21csdYsuUV5U5NjUYfI/+1PUGeS/uJZGYwOwkfBHXw==}
+  siyuan@https://codeload.github.com/siyuan-note/petal/tar.gz/ab89b46871cb33ca1ac9453d61c981de9fb76617:
+    resolution: {gitHosted: true, integrity: sha512-KI/Zf3qZP1gpRpEUCOrFv+7YijhxtmTpAl944QuntYqoQIE6+49+KiKI3CCy68OrSQuDOYaz+k70oWnp93XSiA==, tarball: https://codeload.github.com/siyuan-note/petal/tar.gz/ab89b46871cb33ca1ac9453d61c981de9fb76617}
+    version: 1.2.7
 
   slash@4.0.0:
     resolution: {integrity: sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==}
@@ -1443,8 +1445,8 @@ packages:
       webpack: ^4.0.0 || ^5.0.0
       webpack-sources: '*'
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.1:
+    resolution: {integrity: sha512-341aRWQsve0rvronKNTqZpjmzdbUDlFuzHaI/XLg/Ej82qffDJRRfBTCuv7+9q/rMjB6LSLyEBnW4InJeMtt/Q==}
 
 snapshots:
 
@@ -2556,12 +2558,12 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  siyuan@1.2.4:
+  siyuan@https://codeload.github.com/siyuan-note/petal/tar.gz/ab89b46871cb33ca1ac9453d61c981de9fb76617:
     dependencies:
       '@dop251/types-goja_nodejs-buffer': 0.0.0-20260212111938-1f56ff5bcf14
       '@dop251/types-goja_nodejs-global': 0.0.0-20260212111938-1f56ff5bcf14
       '@dop251/types-goja_nodejs-url': 0.0.0-20260212111938-1f56ff5bcf14
-      zod: 4.4.3
+      zod: 4.6.1
 
   slash@4.0.0: {}
 
@@ -2719,4 +2721,4 @@ snapshots:
       webpack-sources: 3.5.1
       yazl: 2.5.1
 
-  zod@4.4.3: {}
+  zod@4.6.1: {}

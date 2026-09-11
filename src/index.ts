@@ -6,7 +6,8 @@ import {
 import "./index.scss";
 
 const STORAGE_NAME = "top-bar-text-config.json";
-const ELEMENT_TYPE = ["topbarRight", "topbarLeft", "mobileRight"];
+type TElementType = "topbarRight" | "topbarLeft" | "mobileRight";
+const ELEMENT_TYPE: TElementType[] = ["topbarRight", "topbarLeft", "mobileRight"];
 const DRAG_HIDDEN_ATTR = "data-top-bar-text-drag-hidden";
 
 // 原始代码片段：https://ld246.com/article/1728048965009
@@ -16,8 +17,8 @@ export default class TopBarTextPlugin extends Plugin {
     private toolbarElement: HTMLElement | undefined;
     private mobileMenuAnchorElement: HTMLElement | undefined;
     private dragHiddenObserver: MutationObserver | undefined;
-    private topbarOrderObserver: MutationObserver | undefined;
     private lastDragHidden: boolean | undefined;
+    private topbarElements: Partial<Record<"topbarLeft" | "topbarRight", HTMLElement>> = {}; // 已注册的桌面端顶栏元素
     private updateTimers: Map<string, number> = new Map(); // 存储各元素的更新定时器
     private hourlyUpdateTimer: number = 0; // 整点更新定时器
     
@@ -41,9 +42,9 @@ export default class TopBarTextPlugin extends Plugin {
         // this.data[STORAGE_NAME].topbarLeftCountdown.template ??= '示例：距离 <span style="color: red;">${text}</span> 剩余 ${year} 年 ${day} 天'; // 顶栏左侧倒计时模板
         // this.data[STORAGE_NAME].topbarLeftCountdown.text ??= "2100年"; // 顶栏左侧倒计时文本
         // this.data[STORAGE_NAME].topbarLeftCountdown.targetTime ??= "2100-01-01"; // 顶栏左侧倒计时时间
-        // this.data[STORAGE_NAME].mobileRightCountdown.template ??= '示例：距离 <span style="color: red;">${text}</span> 剩余 ${year} 年 ${day} 天'; // 移动端右侧栏倒计时模板
-        // this.data[STORAGE_NAME].mobileRightCountdown.text ??= "2100年"; // 移动端右侧栏倒计时文本
-        // this.data[STORAGE_NAME].mobileRightCountdown.targetTime ??= "2100-01-01"; // 移动端右侧栏倒计时时间
+        // this.data[STORAGE_NAME].mobileRightCountdown.template ??= '示例：距离 <span style="color: red;">${text}</span> 剩余 ${year} 年 ${day} 天'; // 移动端主菜单倒计时模板
+        // this.data[STORAGE_NAME].mobileRightCountdown.text ??= "2100年"; // 移动端主菜单倒计时文本
+        // this.data[STORAGE_NAME].mobileRightCountdown.targetTime ??= "2100-01-01"; // 移动端主菜单倒计时时间
 
         // 插件设置
         this.setting = new Setting({
@@ -116,21 +117,9 @@ export default class TopBarTextPlugin extends Plugin {
                 mobileRightCountdown,
             });
             
-            // 检查每个倒计时模板
+            // 检查每个倒计时模板：模板为空时 insertElement 内部会移除对应元素
             ELEMENT_TYPE.forEach(type => {
-                const template = this.data[STORAGE_NAME][`${type}Countdown`]?.template;
-                if (!template || template.trim() === "") {
-                    // 模板为空字符串，移除倒计时元素
-                    const countdownElement = document.getElementById(`top-bar-text-${type}`);
-                    if (countdownElement) {
-                        countdownElement.remove();
-                    }
-                    // 停止该元素的定时器
-                    this.stopUpdateTimer(type);
-                } else {
-                    // 模板不为空，重新插入元素
-                    this.insertElement(type);
-                }
+                this.insertElement(type);
             });
             
             // 重新启动所有定时器（因为配置可能改变了更新间隔）
@@ -151,8 +140,9 @@ export default class TopBarTextPlugin extends Plugin {
                 // 独立窗口没有顶栏
                 return;
             }
+            this.startDragHiddenObserver();
         } else {
-            // 移动端右侧栏第一个分组前方
+            // 移动端主菜单第一个分组前方
             this.mobileMenuAnchorElement = document.querySelector("#menu .b3-menu__items > .b3-menu__group") as HTMLElement;
             if (!this.mobileMenuAnchorElement) {
                 console.error(this.displayName, this.i18n.onloadFailed);
@@ -160,20 +150,10 @@ export default class TopBarTextPlugin extends Plugin {
             }
         }
 
-        if (!this.isMobile) {
-            this.startDragHiddenObserver();
-            this.startTopbarOrderObserver();
-        }
-
         // 插入元素
         ELEMENT_TYPE.forEach(type => {
             this.insertElement(type, true);
         });
-
-        // 元素插入后立即对齐一次，避免首次重排前的短暂错位
-        if (!this.isMobile) {
-            this.syncTopbarPosition();
-        }
 
         // 启动所有定时器
         ELEMENT_TYPE.forEach(type => {
@@ -188,15 +168,9 @@ export default class TopBarTextPlugin extends Plugin {
 
     onunload() {
         this.stopDragHiddenObserver();
-        this.stopTopbarOrderObserver();
 
         // 移除元素
-        ELEMENT_TYPE.forEach(type => {
-            const countdownElement = document.getElementById(`top-bar-text-${type}`);
-            if (countdownElement) {
-                countdownElement.remove();
-            }
-        });
+        this.removeAllElements();
 
         // 停止所有定时器
         this.stopAllUpdateTimers();
@@ -209,15 +183,9 @@ export default class TopBarTextPlugin extends Plugin {
 
     async uninstall() {
         this.stopDragHiddenObserver();
-        this.stopTopbarOrderObserver();
 
         // 移除元素
-        ELEMENT_TYPE.forEach(type => {
-            const countdownElement = document.getElementById(`top-bar-text-${type}`);
-            if (countdownElement) {
-                countdownElement.remove();
-            }
-        });
+        this.removeAllElements();
 
         // 停止所有定时器
         this.stopAllUpdateTimers();
@@ -231,7 +199,21 @@ export default class TopBarTextPlugin extends Plugin {
         console.log(this.displayName, this.i18n.uninstall);
     }
 
-    /** 跟随 #drag.fn__hidden，把状态记在 #toolbar 上，避免拖拽区挡住全屏后的按钮 */
+    /** 移除桌面端与移动端插入的倒计时元素 */
+    private removeAllElements = () => {
+        ELEMENT_TYPE.forEach(type => {
+            if (type === "mobileRight") {
+                document.getElementById(`top-bar-text-${type}`)?.remove();
+                return;
+            }
+            if (this.topbarElements[type]) {
+                this.removeTopBar(type);
+                delete this.topbarElements[type];
+            }
+        });
+    }
+
+    /** 跟随 #drag.fn__hidden，在编辑器全屏时同步隐藏顶栏文本 */
     private syncTopbarDragHidden = () => {
         const hidden = !!this.topbarDragElement?.classList.contains("fn__hidden");
         if (hidden === this.lastDragHidden) {
@@ -262,49 +244,6 @@ export default class TopBarTextPlugin extends Plugin {
         this.dragHiddenObserver = undefined;
         this.lastDragHidden = undefined;
         this.toolbarElement?.removeAttribute(DRAG_HIDDEN_ATTR);
-    };
-
-    /**
-     * 思源会按顶栏条目配置重排 #toolbar 内的子元素（把带 data-topbar-entry 的条目移动到 #barMore 之前），
-     * 插件元素不在其中，重排后会滞留在原地。这里在重排后把它重新贴回 #drag 的右侧或左侧
-     */
-    private syncTopbarPosition = () => {
-        const dragElement = this.topbarDragElement;
-        if (!dragElement) {
-            return;
-        }
-        (["topbarRight", "topbarLeft"] as const).forEach((type) => {
-            const countdownElement = document.getElementById(`top-bar-text-${type}`);
-            if (!countdownElement) {
-                return;
-            }
-            if (type === "topbarRight") {
-                if (dragElement.nextElementSibling !== countdownElement) {
-                    dragElement.insertAdjacentElement("afterend", countdownElement);
-                }
-            } else if (dragElement.previousElementSibling !== countdownElement) {
-                dragElement.insertAdjacentElement("beforebegin", countdownElement);
-            }
-        });
-    };
-
-    private startTopbarOrderObserver = () => {
-        this.stopTopbarOrderObserver();
-        const toolbarElement = this.topbarDragElement?.parentElement;
-        if (!toolbarElement) {
-            return;
-        }
-        this.toolbarElement = toolbarElement;
-        this.topbarOrderObserver = new MutationObserver(() => {
-            this.syncTopbarPosition();
-        });
-        // 只监听直接子元素的增删，忽略插件自身更新 innerHTML 引起的子树变化
-        this.topbarOrderObserver.observe(toolbarElement, {childList: true});
-    };
-
-    private stopTopbarOrderObserver = () => {
-        this.topbarOrderObserver?.disconnect();
-        this.topbarOrderObserver = undefined;
     };
 
     /**
@@ -506,67 +445,81 @@ export default class TopBarTextPlugin extends Plugin {
     }
 
     private insertElement = (type: (typeof ELEMENT_TYPE)[number], isFirstInsert: boolean = false) => {
-        const countdownElement = document.getElementById(`top-bar-text-${type}`);
+        const countdownConfig = this.data[STORAGE_NAME][`${type}Countdown`];
         let countdownHTML = "";
-        const genCountdownHTML = () => {
-            const countdownTemplate = this.data[STORAGE_NAME][`${type}Countdown`].template;
-            if (countdownTemplate) {
-                countdownHTML = this.calculateDaysLeft(countdownTemplate, type);
-                countdownHTML = countdownHTML.replaceAll("${text}", this.data[STORAGE_NAME][`${type}Countdown`].text ?? "${text}");
-            }
+        if (countdownConfig?.template) {
+            countdownHTML = this.calculateDaysLeft(countdownConfig.template, type);
+            countdownHTML = countdownHTML.replaceAll("${text}", countdownConfig.text ?? "${text}");
         }
 
         if (this.isMobile) {
-            if (type === "mobileRight") {
-                // 移动端右侧栏第一个 b3-menu__group 前面
-                if (!this.mobileMenuAnchorElement) return;
-                genCountdownHTML();
-                if (!countdownHTML) return;
-    
-                if (countdownElement) {
-                    const labelElement = countdownElement.querySelector(".b3-menu__label");
-                    if (labelElement) {
-                        labelElement.innerHTML = countdownHTML;
-                    }
-                } else {
-                    const element = document.createElement("div");
-                    element.id = "top-bar-text-mobileRight";
-                    element.className = "b3-menu__group";
-                    element.innerHTML = `<div class="b3-menu__group-items">
+            // 移动端主菜单第一个 b3-menu__group 前面
+            if (type !== "mobileRight" || !this.mobileMenuAnchorElement) {
+                return;
+            }
+            const countdownElement = document.getElementById(`top-bar-text-${type}`);
+            if (!countdownHTML) {
+                countdownElement?.remove();
+                return;
+            }
+            if (countdownElement) {
+                const labelElement = countdownElement.querySelector(".b3-menu__label");
+                if (labelElement) {
+                    labelElement.innerHTML = countdownHTML;
+                }
+            } else {
+                const element = document.createElement("div");
+                element.id = `top-bar-text-${type}`;
+                element.className = "b3-menu__group";
+                element.innerHTML = `<div class="b3-menu__group-items">
     <div class="b3-menu__item b3-menu__item--readonly">
         <span class="b3-menu__label">${countdownHTML}</span>
     </div>
 </div>`;
-                    this.mobileMenuAnchorElement.insertAdjacentElement("beforebegin", element);
-                }
+                this.mobileMenuAnchorElement.insertAdjacentElement("beforebegin", element);
             }
-        } else if (type === "topbarRight" || type === "topbarLeft") {
-            // 桌面端顶栏右侧或左侧
-            const topbarDragElement = this.topbarDragElement;
-            if (!topbarDragElement) return;
-            genCountdownHTML();
-            if (!countdownHTML) return;
+            return;
+        }
 
-            if (countdownElement) {
-                countdownElement.innerHTML = countdownHTML;
-                countdownElement.setAttribute("aria-label", countdownElement.textContent || "");
-            } else {
-                const element = document.createElement("div");
-                element.id = `top-bar-text-${type}`;
-                element.style.fontSize = getComputedStyle(topbarDragElement).fontSize;
-                if (isFirstInsert) {
-                    setTimeout(() => {
-                        element.style.fontSize = getComputedStyle(topbarDragElement).fontSize; // 可能有的主题会修改 topbarDragElement 元素的字号，所以这里重新获取一次
-                    }, 700);
-                }
-                element.innerHTML = countdownHTML;
-                element.setAttribute("aria-label", element.textContent || "");
-                if (type === "topbarRight") {
-                    topbarDragElement.insertAdjacentElement("afterend", element);
-                } else {
-                    topbarDragElement.insertAdjacentElement("beforebegin", element);
-                }
+        if (type === "mobileRight") {
+            return;
+        }
+        // 桌面端顶栏元素通过插件 API 注册，位置与显隐交给思源管理
+        const topbarElement = this.topbarElements[type];
+        if (!countdownHTML) {
+            if (topbarElement) {
+                this.removeTopBar(type);
+                delete this.topbarElements[type];
             }
+            return;
+        }
+        if (topbarElement) {
+            topbarElement.innerHTML = countdownHTML;
+            return;
+        }
+        const topbarDragElement = this.topbarDragElement;
+        if (!topbarDragElement) {
+            return;
+        }
+        const element = document.createElement("div");
+        element.className = "top-bar-text";
+        element.innerHTML = countdownHTML;
+        element.style.fontSize = getComputedStyle(topbarDragElement).fontSize;
+        const registeredElement = this.addTopBar({
+            id: type,
+            title: this.i18n[type === "topbarRight" ? "topbarRightTitle" : "topbarLeftTitle"],
+            element,
+            position: type === "topbarRight" ? "right" : "left",
+        });
+        if (!registeredElement) {
+            return;
+        }
+        this.topbarElements[type] = registeredElement;
+        if (isFirstInsert) {
+            setTimeout(() => {
+                // 可能有的主题会修改 #drag 元素的字号，所以这里重新获取一次
+                registeredElement.style.fontSize = getComputedStyle(topbarDragElement).fontSize;
+            }, 700);
         }
     }
 
