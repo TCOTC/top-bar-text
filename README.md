@@ -1,2 +1,3 @@
-- Enable the plugin, modify the countdown template, text, and time in the plugin settings, then click the save button to take effect.
-- Not compatible with some themes, as these themes modify the top bar's style or structure, causing the plugin to not work properly.
+# Top Bar Text
+
+Source code: [TCOTC/siyuan-packages](https://github.com/TCOTC/siyuan-packages/tree/main/plugins/top-bar-text). This repository only hosts Bazaar releases.
